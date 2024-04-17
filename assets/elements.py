@@ -1,4 +1,5 @@
 import pygame
+import os
 
 
 class Element:
@@ -12,9 +13,10 @@ class Element:
         self.load()
 
     def load(self) -> None:
-        self.player = pygame.image.load("img/player.png").convert()
-        self.box = pygame.image.load("img/box.png").convert()
-        self.wall = pygame.image.load("img/wall.png").convert()
-        self.target = pygame.image.load("img/target.png").convert()
-        self.box_on_target = pygame.image.load("img/box_on_target.png").convert()
-        self.space = pygame.image.load("img/space.png").convert()
+        base_dir = os.path.dirname(__file__)
+        self.player = pygame.image.load(os.path.join(base_dir,"img/player.png")).convert()
+        self.box = pygame.image.load(os.path.join(base_dir,"img/box.png")).convert()
+        self.wall = pygame.image.load(os.path.join(base_dir,"img/wall.png")).convert()
+        self.target = pygame.image.load(os.path.join(base_dir,"img/target.png")).convert()
+        self.box_on_target = pygame.image.load(os.path.join(base_dir,"img/box_on_target.png")).convert()
+        self.space = pygame.image.load(os.path.join(base_dir,"img/space.png")).convert()
