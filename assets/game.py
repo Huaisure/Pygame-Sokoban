@@ -1,8 +1,10 @@
 from .elements import Element
-import pygame
-import os
+
 from enum import Enum
 from typing import List
+import pygame
+import os
+import sys
 
 BUTTON_HEIGHT = 50
 
@@ -89,7 +91,7 @@ class Game(Element):
                     pygame.quit()
                     exit()
 
-            self.screen.fill((0, 0, 0))
+            self.screen.fill((221,213,172))
             self.draw_button()
             if self.playing:
                 current_time = pygame.time.get_ticks()
@@ -177,7 +179,12 @@ class Game(Element):
     def init_button(self):
         self.button_color = (0, 200, 0)  # 按钮颜色
         self.button_hover_color = (0, 255, 0)  # 鼠标悬停时的颜色
+        self.quit_button_color = (200, 0, 0)  # Quit按钮颜色
+        self.quit_button_hover_color = (255, 0, 0)  # Quit按钮鼠标悬停颜色
+
         self.button_rect = pygame.Rect(0, 0, 200, 50)  # 按钮的位置和大小
+        self.quit_button_rect = pygame.Rect(200, 0, 200, 50)  # Quit按钮的位置和大小
+
         self.button_text = "Create Solution"
         self.font = pygame.font.Font(None, 36)  # 文字字体和大小
         self.playing = False  # 控制是否开始播放解决方案
@@ -196,3 +203,15 @@ class Game(Element):
         text_surf = self.font.render(self.button_text, True, (255, 255, 255))
         text_rect = text_surf.get_rect(center=self.button_rect.center)
         self.screen.blit(text_surf, text_rect)
+
+        if self.quit_button_rect.collidepoint(mouse_pos):
+            pygame.draw.rect(self.screen, self.quit_button_hover_color, self.quit_button_rect)
+            if mouse_clicked:
+                pygame.quit()  # 退出游戏
+                print("Game exited")
+                sys.exit()
+        else:
+            pygame.draw.rect(self.screen, self.quit_button_color, self.quit_button_rect)
+        quit_text_surf = self.font.render('Quit', True, (255, 255, 255))
+        quit_text_rect = quit_text_surf.get_rect(center=self.quit_button_rect.center)
+        self.screen.blit(quit_text_surf, quit_text_rect)
