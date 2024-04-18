@@ -134,8 +134,8 @@ class Solution:
             new_boxes.remove(next_pos)
             new_boxes.append(next_next_pos)
             is_pruned = self.is_pruned(next_next_pos)
-            if is_pruned:
-                print("pruned")
+            # if is_pruned:
+            #     print("pruned")
         return (x+dx, y+dy), tuple(new_boxes), is_pruned
     
     def is_pruned(self,box:Tuple[int,int])->bool:
@@ -234,8 +234,8 @@ class Solution:
             for dir in self.get_possible_moves(current_pos, current_boxes):
                 new_pos, new_boxes, is_pruned = self.move_player(current_pos, dir, current_boxes)
                 new_state = (new_pos, tuple(new_boxes))
-                print(new_state)
-                print(is_pruned)
+                # print(new_state)
+                # print(is_pruned)
                 tentative_g_score = self.g_score[current] + 1 # 代价函数，这里是移动一步，所以是1
 
                 # 如果新状态没有被访问过或者代价更小

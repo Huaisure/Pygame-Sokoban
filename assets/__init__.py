@@ -1,2 +1,2 @@
-from .map import Map
+from .game import Game
 from .elements import Element

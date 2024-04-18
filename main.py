@@ -1,16 +1,15 @@
-from assets import Map
+from assets import Game
 import pygame
 from solution import Solution
 import time
 
 def main():
-    map_style = "magic_sokoban6"
-    my_map = Map(level=9,map_style=map_style, size=(800, 600))
-    t = time.time()
-    # my_map.draw_map()
-    mySolution = Solution(my_map.map_matrix, my_map.matrix_size)
-    print(mySolution.a_star_solution())
-    print("Time:", time.time() - t)
+    # 生成游戏类
+    my_game = Game(level=int(input("请输入关卡号（1-10）：")),size=(800, 600))
+    # 生成解决类
+    mySolution = Solution(my_game.map_matrix, my_game.matrix_size)
+    path = mySolution.a_star_solution()
+    my_game.draw_map(path)
     pass
 
 
