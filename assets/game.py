@@ -1,10 +1,12 @@
 from .elements import Element
 
 from enum import Enum
-from typing import List
+from typing import List, Tuple
 import pygame
 import os
 import sys
+import json
+
 
 BUTTON_HEIGHT = 50
 
@@ -15,7 +17,10 @@ class Game(Element):
     绘制地图，读取地图
     """
 
-    def __init__(self, level: int, size: tuple = (800, 600)) -> None:
+    def __init__(self, level: int, size: tuple = (800, 600), task:int =1) -> None:
+
+        # 用于在更新地图时，两种不同的任务模式
+        self.task = task
 
         ### 初始化pygame
         pygame.display.init()
@@ -33,6 +38,10 @@ class Game(Element):
         self.map_matrix = self.get_map()
         self.player_pos = self.get_player_pos()
         self.target_pos = self.get_target_pos()
+        if task ==2:
+            # 需要记录箱子和目标的对应关系，以便在更新时删去箱子
+            self.parse_box_target()
+            self.box_pos = self.get_box_pos()
         
 
     def get_map(self) -> list:
@@ -73,6 +82,38 @@ class Game(Element):
                 if self.map_matrix[i][j] == ".":
                     target_pos.append((i, j))
         return target_pos
+    
+    def box_to_target(self,box_pos:Tuple[int,int]) -> bool:
+        """
+        判断箱子是否在目标位置
+        """
+        index = self.box_positions.index(box_pos)
+        return self.box_target[index] == box_pos
+
+    def parse_box_target(self):
+        """
+        解析箱子和目标的对应关系
+        """
+        self.box_target = {}
+        json_path = os.path.join(os.path.dirname(__file__),"task2",f"level{self.level}.json")
+        with open(json_path,"r") as f:
+            box_target = json.load(f)
+        for k,v in box_target.items():
+            self.box_target[tuple(map(int,k.split(',')))] = tuple(map(int,v.split(',')))
+
+    def get_box_pos(self) -> List[Tuple[int]]:
+        """
+        由于任务的变化，这里我们按照box_target的顺序返回箱子的位置
+        """
+        self.box_positions = []
+        box_target = {}
+        i = 0 
+        for k,v in self.box_target.items():
+            self.box_positions.append(k)
+            box_target[i] = v
+            i += 1
+        self.box_target = box_target
+
 
     def draw_map(self, a_star_solution) -> None:
         """
@@ -162,18 +203,44 @@ class Game(Element):
             dy = 1
         new_x, new_y = x + dx, y + dy
 
-        if self.map_matrix[new_x][new_y] == "$" or self.map_matrix[new_x][new_y] == "*":
-            # 如果推箱子了，更新箱子
-            new_box_x, new_box_y = new_x + dx, new_y + dy
-            if self.map_matrix[new_box_x][new_box_y] == ".":
-                self.map_matrix[new_box_x][new_box_y] = "*"
-            else:
-                self.map_matrix[new_box_x][new_box_y] = "$"
-            
-        self.player_pos = new_x, new_y
-        # 如果原来的位置为target，更新为target
-        self.map_matrix[x][y] = "." if (x,y) in self.target_pos else " "
-        self.map_matrix[new_x][new_y] = "@"
+        if self.task == 1:
+
+            if self.map_matrix[new_x][new_y] == "$" or self.map_matrix[new_x][new_y] == "*":
+                # 如果推箱子了，更新箱子
+                new_box_x, new_box_y = new_x + dx, new_y + dy
+                if self.map_matrix[new_box_x][new_box_y] == ".":
+                    self.map_matrix[new_box_x][new_box_y] = "*"
+                else:
+                    self.map_matrix[new_box_x][new_box_y] = "$"
+                
+            self.player_pos = new_x, new_y
+            # 如果原来的位置为target，更新为target
+            self.map_matrix[x][y] = "." if (x,y) in self.target_pos else " "
+            self.map_matrix[new_x][new_y] = "@"
+
+        elif self.task == 2:
+            if self.map_matrix[new_x][new_y] == "$" or self.map_matrix[new_x][new_y] == "*":
+                box_pos = (new_x, new_y)
+                new_box_x, new_box_y = new_x + dx, new_y + dy
+                self.box_positions[self.box_positions.index(box_pos)] = (new_box_x, new_box_y)
+                # 判断箱子如果推到了目标位置
+                if self.box_to_target((new_box_x, new_box_y)):
+                    # 将目标位置的箱子删除，变为空地
+                    self.map_matrix[new_box_x][new_box_y] = "."
+                else:
+                    if self.map_matrix[new_box_x][new_box_y] == ".":
+                        self.map_matrix[new_box_x][new_box_y] = "*"
+                    else:
+                        self.map_matrix[new_box_x][new_box_y] = "$"
+                # 如果原来的位置为target，更新为target
+            self.player_pos = new_x, new_y
+
+            self.map_matrix[x][y] = "." if (x,y) in self.target_pos else " "
+            self.map_matrix[new_x][new_y] = "@"
+            # 打印map_matrix
+            for row in self.map_matrix:
+                print(row)
+            pass
 
     
     def init_button(self):

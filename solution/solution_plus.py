@@ -21,8 +21,13 @@ class Solution_plus(Solution):
         由于任务的变化，这里我们按照box_target的顺序返回箱子的位置
         """
         self.box_positions = []
+        box_target = {}
+        i = 0 
         for k,v in self.box_target.items():
             self.box_positions.append(k)
+            box_target[i] = v
+            i += 1
+        self.box_target = box_target
 
     def parse_box_target(self):
         """
@@ -40,7 +45,7 @@ class Solution_plus(Solution):
         判断是否完成任务
         """
         for i in range(len(cur_boxes)):
-            if cur_boxes[i] not in self.box_target:
+            if cur_boxes[i] != self.box_target[i]:
                 return False
         return True
     
@@ -57,7 +62,7 @@ class Solution_plus(Solution):
         dx, dy = (dir.value == 1) * -1 + (dir.value == 2), (dir.value == 3) * -1 + (dir.value == 4)
         map_matrix = np.copy(self.fixed_map_matrix)
         for i in range(len(box_positions)):
-            if box_positions[i] == self.box_target[box_positions[i]]:
+            if box_positions[i] == self.box_target[i]:
                 # 如果箱子在目标位置上，则不更新箱子的位置，相当于删去箱子
                 pass
             else:
@@ -66,12 +71,14 @@ class Solution_plus(Solution):
         next_pos = (x+dx, y+dy)
         next_next_pos = (x+2*dx, y+2*dy)
         is_pruned = False
+        # index = box_positions.index(next_pos)
         if next_pos in box_positions:
-            new_boxes.remove(next_pos)
-            new_boxes.append(next_next_pos)
-            is_pruned = self.is_pruned(next_next_pos)
-            # if is_pruned:
-            #     print("pruned")
+            index = box_positions.index(next_pos)
+            if self.box_target[index] != next_pos:
+                new_boxes[new_boxes.index(next_pos)] = next_next_pos
+                is_pruned = self.is_pruned(next_next_pos)
+                # if is_pruned:
+                #     print("pruned")
         return (x+dx, y+dy), tuple(new_boxes), is_pruned
 
     def is_valid_move(self, cur_pos: Tuple, cur_boxes: List[Tuple[int]], dir: Direction) -> bool:
@@ -86,7 +93,7 @@ class Solution_plus(Solution):
         # TODO
         map_matrix = np.copy(self.fixed_map_matrix)
         for i in range(len(cur_boxes)):
-            if cur_boxes[i] == self.box_target[cur_boxes[i]]:
+            if cur_boxes[i] == self.box_target[i]:
                 # 如果箱子在目标位置上，则不更新箱子的位置，相当于删去箱子
                 pass
             else:
@@ -118,7 +125,7 @@ class Solution_plus(Solution):
         """
         h = 0
         for i in range(len(cur_boxes)):
-            h += self.manhattan_distance(cur_boxes[i],self.box_target[cur_boxes[i]])
+            h += self.manhattan_distance(cur_boxes[i],self.box_target[i])
         return h
     
     def a_star_solution(self):
