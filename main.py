@@ -1,15 +1,23 @@
 from assets import Game
 import pygame
 from solution import Solution, Solution_plus
+import sys
 import time
 
 def main():
+    task = int(input("完成任务1 or 任务2(请输入1或2)："))
+    if task == 1:
+        level = int(input("请输入关卡号（1-10）："))
+        assert level in range(1, 11), "关卡号输入错误"
+    elif task == 2:
+        level = int(input("请输入关卡号（1-5）："))
+        assert level in range(1, 6), "关卡号输入错误"
+    else:
+        print("输入错误，请输入1或2")
+        sys.exit()
+
     # 生成游戏类
-    level = int(input("请输入关卡号（1-10）："))
-    my_game = Game(level=level,size=(800, 600))
-
-    task = int(input("完成任务1 or 任务2：(请输入1或2)"))
-
+    my_game = Game(level=level,size=(800, 600),task= task)
     if task == 1:
         # 生成解决类
         mySolution = Solution(my_game.map_matrix, my_game.matrix_size)
@@ -19,8 +27,12 @@ def main():
         # 若箱子被推到洞口后会消失，且箱子和洞口一一对应，找到最优的移动路线
         mySolution_plus = Solution_plus(my_game.map_matrix, my_game.matrix_size, level=level)
         path = mySolution_plus.a_star_solution()
+    
+    # 打印路径
+    
     print(path)
-    # my_game.draw_map(path)
+    # 可视化
+    my_game.draw_map(path)
     pass
 
 
