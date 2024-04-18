@@ -138,7 +138,7 @@ class Game(Element):
                 current_time = pygame.time.get_ticks()
                 if current_time - last_move_time > move_interval:
                     if move_index < len(move_sequence):
-                        print(move_sequence[move_index])
+                        # print(move_sequence[move_index])
                         self.update_position(move_sequence[move_index])
                         move_index += 1
                         last_move_time = current_time

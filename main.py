@@ -29,8 +29,17 @@ def main():
         path = mySolution_plus.a_star_solution()
     
     # 打印路径
-    
-    print(path)
+    print("path:")
+    for i in path:
+        if i.value == 1:
+            print("up->", end=" ")
+        elif i.value == 2:
+            print("down->", end=" ")
+        elif i.value == 3:
+            print("left->", end=" ")
+        elif i.value == 4:
+            print("right->", end=" ")
+    print()
     # 可视化
     my_game.draw_map(path)
     pass
