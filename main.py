@@ -4,7 +4,8 @@ from solution import Solution
 import time
 
 def main():
-    my_map = Map(level=10, size=(800, 600))
+    map_style = "magic_sokoban6"
+    my_map = Map(level=9,map_style=map_style, size=(800, 600))
     t = time.time()
     # my_map.draw_map()
     mySolution = Solution(my_map.map_matrix, my_map.matrix_size)

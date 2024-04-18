@@ -66,6 +66,7 @@ class Solution:
         :return: 是否合法
         """
         x, y = cur_pos
+        # TODO
         map_matrix = np.copy(self.fixed_map_matrix)
         for box in cur_boxes:
             map_matrix[box] = 3 if map_matrix[box] == 0 else 5
@@ -118,7 +119,7 @@ class Solution:
         :param pos: 当前位置
         :param dir: 移动方向
         :param box_positions: 箱子的位置
-        :return: 移动后玩家的位置和箱子的位置
+        :return: 移动后玩家的位置和箱子的位置, 以及是否被剪枝
         """
         new_boxes = [box for box in box_positions]
         x, y = pos
@@ -128,11 +129,13 @@ class Solution:
             map_matrix[box] = 3 if map_matrix[box] == 0 else 5
         next_pos = (x+dx, y+dy)
         next_next_pos = (x+2*dx, y+2*dy)
-        is_pruned = bool(0)
+        is_pruned = False
         if next_pos in box_positions:
             new_boxes.remove(next_pos)
             new_boxes.append(next_next_pos)
             is_pruned = self.is_pruned(next_next_pos)
+            if is_pruned:
+                print("pruned")
         return (x+dx, y+dy), tuple(new_boxes), is_pruned
     
     def is_pruned(self,box:Tuple[int,int])->bool:
@@ -143,7 +146,7 @@ class Solution:
         # 如果箱子在目标位置上，则不剪枝
         if box in self.goal_positions:
             return False
-        # 如果箱子周围存在三面为墙，或左上、左下、右上、右下都是墙，则剪枝
+        # 如果箱子周围存左上、左下、右上、右下都是墙，则剪枝
         left = (self.fixed_map_matrix[x][y-1] == 1)
         right = (self.fixed_map_matrix[x][y+1] == 1)
         up = (self.fixed_map_matrix[x-1][y] == 1)
@@ -231,6 +234,8 @@ class Solution:
             for dir in self.get_possible_moves(current_pos, current_boxes):
                 new_pos, new_boxes, is_pruned = self.move_player(current_pos, dir, current_boxes)
                 new_state = (new_pos, tuple(new_boxes))
+                print(new_state)
+                print(is_pruned)
                 tentative_g_score = self.g_score[current] + 1 # 代价函数，这里是移动一步，所以是1
 
                 # 如果新状态没有被访问过或者代价更小
