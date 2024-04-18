@@ -238,9 +238,9 @@ class Game(Element):
             self.map_matrix[x][y] = "." if (x,y) in self.target_pos else " "
             self.map_matrix[new_x][new_y] = "@"
             # 打印map_matrix
-            for row in self.map_matrix:
-                print(row)
-            pass
+            # for row in self.map_matrix:
+            #     print(row)
+            # pass
 
     
     def init_button(self):
