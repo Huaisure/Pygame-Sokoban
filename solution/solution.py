@@ -1,7 +1,7 @@
 import numpy as np
 from enum import Enum
-from ..assets import Map
 from typing import List, Tuple
+from queue import PriorityQueue
 
 class Direction(Enum):
     UP = 1
@@ -10,10 +10,28 @@ class Direction(Enum):
     RIGHT = 4
 
 class Solution:
-    def __init__(self, map:Map) -> None:
+    def __init__(self, map:List[Tuple[int,int]],matrix_size:Tuple[int,int]) -> None:
         self.map = map
+        self.matrix_size = matrix_size[1],matrix_size[0]
         self.map_matrix = self.convert_map()
+        self.goal_positions = self.get_target_positions()  # 目标位置
+        self.box_positions = self.get_box_positions()  # 箱子位置
         self.pos = self.get_player_pos()# 玩家的位置
+
+        # 由于地图中的元素除了玩家和箱子外，都是不可变的，所以我们可以有一个没有玩家和箱子的地图
+        self.fixed_map_matrix = np.copy(self.map_matrix)
+        self.fixed_map_matrix[self.fixed_map_matrix == 4] = 0
+        self.fixed_map_matrix[self.fixed_map_matrix == 3] = 0
+        self.fixed_map_matrix[self.fixed_map_matrix == 5] = 2
+
+        ###### A*算法相关 ######
+        # 进行A*算法时不能改变原有的地图，我们只需要维护玩家的位置和箱子的位置即可
+
+        self.open_set = PriorityQueue()  # A*算法中的开放列表
+        self.came_from = {}  # 跟踪路径
+        self.g_score = {}  # 从初始状态到当前状态的成本
+        self.f_score = {}  # 预估的总成本
+        ########################
 
     def convert_map(self) -> np.ndarray:
         """
@@ -21,33 +39,36 @@ class Solution:
         wall: 1, space: 0, target: 2, box: 3, player: 4, box on target: 5
         :return: numpy数组
         """
-        map_array = np.zeros(self.map.matrix_size, dtype=int)
-        for i in range(len(self.map.map_matrix)):
-            for j in range(len(self.map.map_matrix[i])):
-                char = self.map.map_matrix[i][j]
+        map_array = np.zeros(self.matrix_size, dtype=int)
+        for i in range(len(self.map)):
+            for j in range(len(self.map[i])):
+                char = self.map[i][j]
                 if char == "#":
                     map_array[i][j] = 1
                 elif char == " ":
                     map_array[i][j] = 0
-                elif char == "O":
+                elif char == ".":
                     map_array[i][j] = 2
-                elif char == "X":
+                elif char == "$":
                     map_array[i][j] = 3
-                elif char == "P":
+                elif char == "@":
                     map_array[i][j] = 4
-                elif char == "B":
+                elif char == "*":
                     map_array[i][j] = 5
         return map_array
 
-    def is_valid_move(self, pos:tuple, dir:Direction) -> bool:
+    def is_valid_move(self, cur_pos:tuple, cur_boxes:List[Tuple[int,int]],dir:Direction) -> bool:
         """
         判断是否为合法的移动
-        :param pos: 当前位置
+        :param cur_pos: 当前位置
+        :param cur_boxes: 当前箱子的位置
         :param dir: 移动方向
         :return: 是否合法
         """
-        x, y = pos
-        map_matrix = self.map_matrix
+        x, y = cur_pos
+        map_matrix = self.fixed_map_matrix
+        for box in cur_boxes:
+            map_matrix[box] = 3
         dx,dy = 0,0
         # 1: wall, 2: target, 3: box, 4: player, 5: box on target
         if dir == Direction.UP:
@@ -68,7 +89,7 @@ class Solution:
                 return False
         return True
     
-    def get_possible_moves(self, pos:tuple) -> List[Direction]:
+    def get_possible_moves(self, pos:tuple, boxes:List[Tuple[int,int]]) -> List[Direction]:
         """
         获取可能的移动
         :param pos: 当前位置
@@ -76,7 +97,7 @@ class Solution:
         """
         moves = []
         for dir in Direction:
-            if self.is_valid_move(pos, dir):
+            if self.is_valid_move(pos, boxes, dir):
                 moves.append(dir)
         return moves
 
@@ -91,35 +112,122 @@ class Solution:
                     return (i, j)
         return None
     
-    def move_player(self, dir: Direction) -> bool:
+    def move_player(self, pos:Tuple[int,int] ,dir: Direction, box_positions:List[Tuple[int,int]])->Tuple[Tuple[int,int],Tuple[List[Tuple[int,int]]]]:
         """
         移动玩家
+        :param pos: 当前位置
         :param dir: 移动方向
+        :param box_positions: 箱子的位置
+        :return: 移动后玩家的位置和箱子的位置
         """
-        pos = self.pos
+        new_boxes = [box for box in box_positions]
         x, y = pos
         dx, dy = (dir.value == 1) * -1 + (dir.value == 2), (dir.value == 3) * -1 + (dir.value == 4)
-        self.map_matrix[x][y] = 0
-        # 如果推动箱子了，那么更新箱子的位置
-        if self.map_matrix[x+dx][y+dy] == 3 or self.map_matrix[x+dx][y+dy] == 5:
-            # 如果x+2dx, y+2dy是目标位置
-            if self.map_matrix[x+2*dx][y+2*dy] == 2:
-                self.map_matrix[x+dx][y+dy] = 5
-            else:
-                self.map_matrix[x+dx][y+dy] = 3
-        self.map_matrix[x+dx][y+dy] = 4
-        self.pos = (x+dx, y+dy)
-        return True
+        map_matrix = self.fixed_map_matrix
+        for box in box_positions:
+            map_matrix[box] = 3
+        next_pos = (x+dx, y+dy)
+        next_next_pos = (x+2*dx, y+2*dy)
+        if next_pos in box_positions:
+            new_boxes.remove(next_pos)
+            new_boxes.append(next_next_pos)
+
+        return (x+dx, y+dy), tuple(new_boxes)
     
-    def is_solved(self) -> bool:
+    def is_solved(self, cur_boxes:List[Tuple[int,int]]) -> bool:
         """
         判断是否解决
         :return: 是否解决
         """
+        return set(cur_boxes) == set(self.goal_positions)
+    
+    def get_box_positions(self) -> List[Tuple[int, int]]:
+        """
+        获取箱子的位置
+        :return: 箱子的位置
+        """
+        box_positions = []
         for i in range(len(self.map_matrix)):
             for j in range(len(self.map_matrix[i])):
-                if self.map_matrix[i][j] == 3:
-                    return False
-        return True
+                if self.map_matrix[i][j] == 3 or self.map_matrix[i][j] == 5:
+                    box_positions.append((i, j))
+        return box_positions
     
+    def get_target_positions(self) -> List[Tuple[int, int]]:
+        """
+        获取目标位置
+        :return: 目标位置
+        """
+        target_positions = []
+        for i in range(len(self.map_matrix)):
+            for j in range(len(self.map_matrix[i])):
+                if self.map_matrix[i][j] == 2 or self.map_matrix[i][j] == 5:
+                    target_positions.append((i, j))
+        return target_positions
     
+    def manhattan_distance(self, pos1: Tuple[int, int], pos2: Tuple[int, int]) -> int:
+        """
+        曼哈顿距离
+        :param pos1: 位置1
+        :param pos2: 位置2
+        :return: 曼哈顿距离
+        """
+        return abs(pos1[0] - pos2[0]) + abs(pos1[1] - pos2[1])
+    
+    def heuristic(self, cur_boxes:List[Tuple[int,int]]) -> int:
+        """
+        启发式函数，采用曼哈顿距离
+        :return: 启发式函数值
+        """
+        box_positions = cur_boxes
+        target_positions = self.goal_positions
+        total_distance = 0
+        for box_pos in box_positions:
+            min_distance = float("inf")
+            for target_pos in target_positions:
+                d = self.manhattan_distance(box_pos, target_pos)
+                if d < min_distance:
+                    min_distance = d
+            total_distance += min_distance
+        return total_distance
+
+
+    def a_star_solution(self):
+        """
+        A*算法求解
+        """
+        start = (self.pos, tuple(self.box_positions)) # 使用tuple，list是不可哈希的
+        self.g_score[start] = 0
+        self.f_score[start] = self.heuristic(self.box_positions)
+        self.open_set.put((self.f_score[start], start))
+
+        while not self.open_set.empty():
+            current_f, current = self.open_set.get()
+            current_pos, current_boxes = current
+
+            # 判断是否解决
+            if self.is_solved(current_boxes):
+                return self.reconstruct_path(current)
+            
+            # 生成新的移动状态
+            for dir in self.get_possible_moves(current_pos, current_boxes):
+                new_pos, new_boxes = self.move_player(current_pos, dir, current_boxes)
+                new_state = (new_pos, tuple(new_boxes))
+                tentative_g_score = self.g_score[current] + 1 # 代价函数，这里是移动一步，所以是1
+
+                # 如果新状态没有被访问过或者代价更小
+                if new_state not in self.g_score or tentative_g_score < self.g_score[new_state]:
+                    self.came_from[new_state] = (current, dir)
+                    self.g_score[new_state] = tentative_g_score
+                    self.f_score[new_state] = tentative_g_score + self.heuristic(new_boxes)
+                    self.open_set.put((self.f_score[new_state], new_state))
+        return "No solution found!"
+
+    def reconstruct_path(self, current):
+        """重建路径"""
+        total_path = []
+        while current in self.came_from:
+            current, direction = self.came_from[current]
+            total_path.append(direction)
+        total_path.reverse()  # 因为我们是从目标回溯到起点的
+        return total_path

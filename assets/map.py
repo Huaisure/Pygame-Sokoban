@@ -30,7 +30,7 @@ class Map(Element):
         matrix = []
         self.matrix_size = (0, 0)
         map_path = os.path.join(
-            os.path.dirname(__file__), "levels", f"level{self.level}"
+            os.path.dirname(__file__),"levels","magic_sokoban6",  f"level{self.level}"
         )
         with open(map_path, "r") as f:
             for row in f.read().splitlines():

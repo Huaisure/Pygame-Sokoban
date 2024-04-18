@@ -1,1 +1,1 @@
-from solution import Solution
+from .solution import Solution
