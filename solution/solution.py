@@ -66,9 +66,9 @@ class Solution:
         :return: 是否合法
         """
         x, y = cur_pos
-        map_matrix = self.fixed_map_matrix
+        map_matrix = np.copy(self.fixed_map_matrix)
         for box in cur_boxes:
-            map_matrix[box] = 3
+            map_matrix[box] = 3 if map_matrix[box] == 0 else 5
         dx,dy = 0,0
         # 1: wall, 2: target, 3: box, 4: player, 5: box on target
         if dir == Direction.UP:
@@ -123,16 +123,34 @@ class Solution:
         new_boxes = [box for box in box_positions]
         x, y = pos
         dx, dy = (dir.value == 1) * -1 + (dir.value == 2), (dir.value == 3) * -1 + (dir.value == 4)
-        map_matrix = self.fixed_map_matrix
+        map_matrix = np.copy(self.fixed_map_matrix) 
         for box in box_positions:
-            map_matrix[box] = 3
+            map_matrix[box] = 3 if map_matrix[box] == 0 else 5
         next_pos = (x+dx, y+dy)
         next_next_pos = (x+2*dx, y+2*dy)
+        is_pruned = bool(0)
         if next_pos in box_positions:
             new_boxes.remove(next_pos)
             new_boxes.append(next_next_pos)
-
-        return (x+dx, y+dy), tuple(new_boxes)
+            is_pruned = self.is_pruned(next_next_pos)
+        return (x+dx, y+dy), tuple(new_boxes), is_pruned
+    
+    def is_pruned(self,box:Tuple[int,int])->bool:
+        """
+        判断是否被剪枝，如果箱子无法再被移动，且箱子不在目标上，则被剪枝
+        """
+        x, y = box
+        # 如果箱子在目标位置上，则不剪枝
+        if box in self.goal_positions:
+            return False
+        # 如果箱子周围存在三面为墙，或左上、左下、右上、右下都是墙，则剪枝
+        left = (self.fixed_map_matrix[x][y-1] == 1)
+        right = (self.fixed_map_matrix[x][y+1] == 1)
+        up = (self.fixed_map_matrix[x-1][y] == 1)
+        down = (self.fixed_map_matrix[x+1][y] == 1)
+        if (left and up) or (left and down) or (right and up) or (right and down):
+            return True
+        return False
     
     def is_solved(self, cur_boxes:List[Tuple[int,int]]) -> bool:
         """
@@ -153,7 +171,7 @@ class Solution:
                     box_positions.append((i, j))
         return box_positions
     
-    def get_target_positions(self) -> List[Tuple[int, int]]:
+    def get_target_positions(self) -> Tuple[List[Tuple[int, int]]]:
         """
         获取目标位置
         :return: 目标位置
@@ -163,7 +181,7 @@ class Solution:
             for j in range(len(self.map_matrix[i])):
                 if self.map_matrix[i][j] == 2 or self.map_matrix[i][j] == 5:
                     target_positions.append((i, j))
-        return target_positions
+        return tuple(target_positions)
     
     def manhattan_distance(self, pos1: Tuple[int, int], pos2: Tuple[int, int]) -> int:
         """
@@ -211,7 +229,7 @@ class Solution:
             
             # 生成新的移动状态
             for dir in self.get_possible_moves(current_pos, current_boxes):
-                new_pos, new_boxes = self.move_player(current_pos, dir, current_boxes)
+                new_pos, new_boxes, is_pruned = self.move_player(current_pos, dir, current_boxes)
                 new_state = (new_pos, tuple(new_boxes))
                 tentative_g_score = self.g_score[current] + 1 # 代价函数，这里是移动一步，所以是1
 
@@ -220,7 +238,8 @@ class Solution:
                     self.came_from[new_state] = (current, dir)
                     self.g_score[new_state] = tentative_g_score
                     self.f_score[new_state] = tentative_g_score + self.heuristic(new_boxes)
-                    self.open_set.put((self.f_score[new_state], new_state))
+                    if not is_pruned:
+                        self.open_set.put((self.f_score[new_state], new_state))
         return "No solution found!"
 
     def reconstruct_path(self, current):
@@ -231,3 +250,4 @@ class Solution:
             total_path.append(direction)
         total_path.reverse()  # 因为我们是从目标回溯到起点的
         return total_path
+    
