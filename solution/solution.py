@@ -26,7 +26,6 @@ class Solution:
 
         ###### A*算法相关 ######
         # 进行A*算法时不能改变原有的地图，我们只需要维护玩家的位置和箱子的位置即可
-
         self.open_set = PriorityQueue()  # A*算法中的开放列表
         self.came_from = {}  # 跟踪路径
         self.g_score = {}  # 从初始状态到当前状态的成本
@@ -211,7 +210,6 @@ class Solution:
                     min_distance = d
             total_distance += min_distance
         return total_distance
-
 
     def a_star_solution(self):
         """

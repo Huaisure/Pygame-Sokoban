@@ -82,7 +82,7 @@ class Game(Element):
         move_sequence = a_star_solution
         move_index = 0
         last_move_time = pygame.time.get_ticks()
-        move_interval = 500  # 移动间隔，以毫秒为单位
+        move_interval = 200  # 移动间隔，以毫秒为单位
         clock = pygame.time.Clock()
 
         while True:
