@@ -40,5 +40,5 @@ python main.py
 
 这里展示一张移动过程中的图片，这里是任务一玩家在移动箱子的过程。
 
-![alt text](image.png)
+![alt text](assets/img/image.png)
 
