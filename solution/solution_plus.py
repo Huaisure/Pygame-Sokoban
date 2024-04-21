@@ -11,39 +11,8 @@ class Solution_plus(Solution):
     若箱子被推到洞口后会消失，且箱子和洞口一一对应
     """
 
-    def __init__(self, game_info: dict, level: int):
-        self.level = level
+    def __init__(self, game_info: dict):
         super().__init__(game_info=game_info)
-        self.parse_box_target()
-        self.get_box_positions_()
-
-    def get_box_positions_(self) -> List[Tuple[int]]:
-        """
-        由于任务的变化，这里我们按照box_target的顺序返回箱子的位置
-        """
-        self.box_positions = []
-        box_target = {}
-        i = 0
-        for k, v in self.box_target.items():
-            self.box_positions.append(k)
-            box_target[i] = v
-            i += 1
-        self.box_target = box_target
-
-    def parse_box_target(self):
-        """
-        解析箱子和目标的对应关系
-        """
-        self.box_target = {}
-        json_path = os.path.join(
-            os.path.dirname(__file__), "task2", f"level{self.level}.json"
-        )
-        with open(json_path, "r") as f:
-            box_target = json.load(f)
-        for k, v in box_target.items():
-            self.box_target[tuple(map(int, k.split(",")))] = tuple(
-                map(int, v.split(","))
-            )
 
     def is_solved(self, cur_boxes: List[Tuple[int]]) -> bool:
         """
